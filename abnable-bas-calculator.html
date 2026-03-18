@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ABNable — BAS Income Translator</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink: #0f1a12; --ink-light: #3d5040; --ink-muted: #7a8f7d;
+  --bg: #f4f1eb; --bg-card: #fff; --bg-warm: #ede9e0;
+  --green: #1a6b3c; --green-light: #e8f4ed; --green-mid: #2d8a52;
+  --accent: #c8873a; --accent-light: #fdf0e3;
+  --red: #c0392b; --red-light: #fdf0ee;
+  --blue: #1a4a8b; --blue-light: #e8f0fd;
+  --border: #ddd8ce;
+  --shadow: 0 2px 12px rgba(15,26,18,.08);
+  --shadow-lg: 0 8px 40px rgba(15,26,18,.12);
+  --radius: 12px; --radius-lg: 20px;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+/* NAV */
+nav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 40px; background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 100;
+}
+.logo { font-family: 'DM Serif Display', serif; font-size: 20px; color: var(--green); }
+.logo span { color: var(--accent); }
+.nav-back { font-size: 13px; color: var(--ink-muted); cursor: pointer; display: flex; align-items: center; gap: 6px; border: none; background: none; font-family: 'DM Sans', sans-serif; }
+.nav-back:hover { color: var(--ink); }
+
+/* HERO */
+.hero {
+  max-width: 860px; margin: 0 auto;
+  padding: 56px 32px 40px;
+  text-align: center;
+}
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--green-light); color: var(--green);
+  border-radius: 40px; padding: 6px 14px;
+  font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em;
+  margin-bottom: 18px;
+}
+h1 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 44px; line-height: 1.1; letter-spacing: -.5px;
+  color: var(--ink); margin-bottom: 14px;
+}
+h1 em { font-style: italic; color: var(--green); }
+.hero-sub {
+  font-size: 17px; color: var(--ink-light); max-width: 580px;
+  margin: 0 auto 12px; line-height: 1.7;
+}
+.hero-note {
+  font-size: 13px; color: var(--ink-muted);
+  background: var(--accent-light); border-radius: 40px;
+  padding: 6px 16px; display: inline-block; margin-bottom: 40px;
+}
+
+/* MAIN LAYOUT */
+.main {
+  max-width: 1060px; margin: 0 auto;
+  padding: 0 32px 80px;
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+/* INPUT PANEL */
+.input-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  position: sticky;
+  top: 72px;
+}
+.panel-header {
+  background: var(--green);
+  padding: 20px 24px;
+}
+.panel-header h3 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 18px; color: white; margin-bottom: 3px;
+}
+.panel-header p { font-size: 12px; color: rgba(255,255,255,.65); }
+
+.panel-body { padding: 24px; }
+
+.section-label {
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--ink-muted); margin-bottom: 10px;
+}
+
+/* BAS QUARTERS */
+.bas-quarter {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 10px;
+}
+.bas-quarter-label {
+  font-size: 12px; font-weight: 500; color: var(--ink-light);
+  min-width: 60px; flex-shrink: 0;
+}
+.bas-input-wrap { flex: 1; position: relative; }
+.bas-input-wrap::before {
+  content: '$';
+  position: absolute; left: 12px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px; color: var(--ink-muted);
+}
+.bas-input {
+  width: 100%; padding: 10px 12px 10px 24px;
+  border: 1.5px solid var(--border); border-radius: var(--radius);
+  font-size: 14px; font-family: 'DM Sans', sans-serif;
+  color: var(--ink); background: white; outline: none;
+  transition: border-color .2s;
+}
+.bas-input:focus { border-color: var(--green); }
+.bas-input::placeholder { color: #bbb; }
+
+.bas-total {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--green-light); border-radius: var(--radius);
+  padding: 12px 14px; margin: 14px 0;
+}
+.bas-total-label { font-size: 12px; color: var(--green); font-weight: 500; }
+.bas-total-val { font-size: 18px; font-weight: 600; color: var(--green); }
+
+.divider { height: 1px; background: var(--border); margin: 18px 0; }
+
+/* EXPENSE INPUTS */
+.expense-row {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+}
+.expense-label { font-size: 12px; color: var(--ink-light); flex: 1; }
+.expense-input-wrap { position: relative; width: 110px; flex-shrink: 0; }
+.expense-input-wrap::before {
+  content: '$'; position: absolute; left: 10px; top: 50%;
+  transform: translateY(-50%); font-size: 13px; color: var(--ink-muted);
+}
+.expense-input {
+  width: 100%; padding: 8px 10px 8px 22px;
+  border: 1.5px solid var(--border); border-radius: 8px;
+  font-size: 13px; font-family: 'DM Sans', sans-serif;
+  color: var(--ink); background: white; outline: none;
+  transition: border-color .2s;
+}
+.expense-input:focus { border-color: var(--green); }
+
+/* STRUCTURE SELECTOR */
+.struct-pills { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px; }
+.struct-pill {
+  padding: 7px 14px; border: 1.5px solid var(--border);
+  border-radius: 40px; font-size: 12px; cursor: pointer;
+  transition: all .2s; color: var(--ink-light); background: white;
+}
+.struct-pill:hover { border-color: var(--green); }
+.struct-pill.selected { border-color: var(--green); background: var(--green); color: white; }
+
+.calc-btn {
+  width: 100%; background: var(--green); color: white;
+  padding: 14px; border-radius: 40px; font-size: 15px; font-weight: 500;
+  border: none; cursor: pointer; font-family: 'DM Sans', sans-serif;
+  transition: all .2s; margin-top: 4px;
+}
+.calc-btn:hover { background: var(--green-mid); }
+
+/* RESULTS PANEL */
+.results-panel { }
+
+/* INCOME SUMMARY */
+.income-summary {
+  background: var(--ink); border-radius: var(--radius-lg);
+  padding: 28px 32px; margin-bottom: 20px;
+}
+.income-summary-title {
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .08em; color: rgba(255,255,255,.4); margin-bottom: 16px;
+}
+.income-grid {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0;
+}
+.income-item { padding-right: 24px; border-right: 1px solid rgba(255,255,255,.1); margin-right: 24px; }
+.income-item:last-child { border-right: none; padding-right: 0; margin-right: 0; }
+.income-val {
+  font-family: 'DM Serif Display', serif;
+  font-size: 30px; color: white; line-height: 1; margin-bottom: 4px;
+}
+.income-val.highlight { color: #4ade80; }
+.income-label { font-size: 12px; color: rgba(255,255,255,.5); }
+.income-delta {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; font-weight: 600;
+  background: rgba(74,222,128,.15); color: #4ade80;
+  padding: 2px 8px; border-radius: 20px; margin-top: 6px;
+}
+
+/* LENDER BREAKDOWN */
+.lender-breakdown-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 22px; color: var(--ink); margin-bottom: 4px;
+}
+.lender-breakdown-sub { font-size: 13px; color: var(--ink-muted); margin-bottom: 16px; }
+
+.lender-income-card {
+  background: var(--bg-card); border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg); padding: 20px 24px;
+  margin-bottom: 12px; transition: all .2s;
+}
+.lender-income-card:hover { border-color: var(--green); box-shadow: var(--shadow); }
+.lender-income-card.top { border-color: var(--green); background: var(--green-light); }
+
+.lic-top {
+  display: flex; align-items: flex-start;
+  justify-content: space-between; margin-bottom: 14px;
+}
+.lic-name { font-size: 16px; font-weight: 600; color: var(--ink); }
+.lic-cat { font-size: 11px; color: var(--ink-muted); margin-top: 2px; }
+.lic-assessed {
+  text-align: right;
+}
+.lic-assessed-val {
+  font-size: 22px; font-weight: 600; color: var(--green);
+}
+.lic-assessed-label { font-size: 11px; color: var(--ink-muted); }
+
+.lic-bar-row {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+}
+.lic-bar-label { font-size: 11px; color: var(--ink-muted); min-width: 110px; }
+.lic-bar-track {
+  flex: 1; height: 8px; background: var(--border);
+  border-radius: 4px; overflow: hidden;
+}
+.lic-bar-fill {
+  height: 100%; border-radius: 4px;
+  transition: width 1s ease;
+}
+.bar-green { background: var(--green); }
+.bar-blue { background: #378add; }
+.bar-amber { background: var(--accent); }
+
+.lic-method {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;
+}
+.lic-tag {
+  font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 500;
+}
+.tag-method { background: var(--blue-light); color: var(--blue); }
+.tag-addback { background: var(--green-light); color: var(--green); }
+.tag-bas { background: var(--accent-light); color: var(--accent); }
+
+.lic-explanation {
+  font-size: 12px; color: var(--ink-muted); line-height: 1.6;
+  background: white; border-radius: 8px; padding: 10px 12px;
+}
+
+/* BORROWING CAPACITY */
+.capacity-banner {
+  background: var(--accent-light); border: 1px solid #f0c88a;
+  border-radius: var(--radius-lg); padding: 20px 24px; margin-top: 20px;
+}
+.capacity-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 18px; color: var(--accent); margin-bottom: 8px;
+}
+.capacity-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px;
+}
+.capacity-item {
+  background: white; border-radius: var(--radius); padding: 14px;
+}
+.capacity-lender { font-size: 12px; color: var(--ink-muted); margin-bottom: 4px; }
+.capacity-amount { font-size: 20px; font-weight: 600; color: var(--ink); }
+.capacity-note { font-size: 11px; color: var(--ink-muted); margin-top: 2px; }
+
+/* EMPTY STATE */
+.empty-state {
+  background: var(--bg-card); border: 1.5px dashed var(--border);
+  border-radius: var(--radius-lg); padding: 48px 32px; text-align: center;
+}
+.empty-icon { font-size: 40px; margin-bottom: 12px; }
+.empty-title { font-size: 16px; font-weight: 500; color: var(--ink); margin-bottom: 6px; }
+.empty-sub { font-size: 13px; color: var(--ink-muted); }
+
+/* WHAT IS THIS BOX */
+.explainer {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 20px 24px; margin-bottom: 20px;
+}
+.explainer-title { font-size: 14px; font-weight: 600; color: var(--ink); margin-bottom: 10px; }
+.explainer-row {
+  display: flex; gap: 10px; margin-bottom: 8px; font-size: 13px; color: var(--ink-light);
+  align-items: flex-start;
+}
+.explainer-icon { flex-shrink: 0; margin-top: 1px; }
+
+@media (max-width: 768px) {
+  nav { padding: 16px 20px; }
+  h1 { font-size: 30px; }
+  .hero { padding: 36px 20px 28px; }
+  .main { grid-template-columns: 1fr; padding: 0 20px 60px; }
+  .input-panel { position: static; }
+  .income-grid { grid-template-columns: 1fr 1fr; }
+  .capacity-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">ABN<span>able</span></div>
+  <button class="nav-back" onclick="history.back()">← Back to matches</button>
+</nav>
+
+<div class="hero">
+  <div class="hero-eyebrow">Free tool · No credit check</div>
+  <h1>Your BAS income,<br><em>translated for lenders</em></h1>
+  <p class="hero-sub">Enter your last 4 BAS figures and see exactly how much income each lender will assess — and how much you can borrow. Most self-employed borrowers can borrow more than they think.</p>
+  <div class="hero-note">💡 Tip: Lenders using gross revenue can assess up to 40% more income than those using net profit</div>
+</div>
+
+<div class="main">
+
+  <!-- INPUT PANEL -->
+  <div class="input-panel">
+    <div class="panel-header">
+      <h3>Enter your BAS figures</h3>
+      <p>Total sales / gross income from each quarter</p>
+    </div>
+    <div class="panel-body">
+
+      <div class="section-label">Last 4 BAS quarters — G1 (total sales)</div>
+      <div class="bas-quarter">
+        <div class="bas-quarter-label">Q1 (latest)</div>
+        <div class="bas-input-wrap">
+          <input class="bas-input" id="bas-q1" type="number" placeholder="42,500" oninput="updateTotal()">
+        </div>
+      </div>
+      <div class="bas-quarter">
+        <div class="bas-quarter-label">Q2</div>
+        <div class="bas-input-wrap">
+          <input class="bas-input" id="bas-q2" type="number" placeholder="38,200" oninput="updateTotal()">
+        </div>
+      </div>
+      <div class="bas-quarter">
+        <div class="bas-quarter-label">Q3</div>
+        <div class="bas-input-wrap">
+          <input class="bas-input" id="bas-q3" type="number" placeholder="45,100" oninput="updateTotal()">
+        </div>
+      </div>
+      <div class="bas-quarter">
+        <div class="bas-quarter-label">Q4 (oldest)</div>
+        <div class="bas-input-wrap">
+          <input class="bas-input" id="bas-q4" type="number" placeholder="39,800" oninput="updateTotal()">
+        </div>
+      </div>
+
+      <div class="bas-total">
+        <span class="bas-total-label">Annual gross revenue</span>
+        <span class="bas-total-val" id="bas-total-display">$0</span>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="section-label">Business structure</div>
+      <div class="struct-pills" id="struct-pills">
+        <div class="struct-pill selected" onclick="selectStruct(this,'sole_trader')">Sole trader</div>
+        <div class="struct-pill" onclick="selectStruct(this,'company')">Company</div>
+        <div class="struct-pill" onclick="selectStruct(this,'trust')">Trust</div>
+        <div class="struct-pill" onclick="selectStruct(this,'partnership')">Partnership</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="section-label">Annual business expenses (optional)</div>
+      <div class="expense-row">
+        <div class="expense-label">Cost of goods / subcontractors</div>
+        <div class="expense-input-wrap">
+          <input class="expense-input" id="exp-cogs" type="number" placeholder="0" oninput="updateTotal()">
+        </div>
+      </div>
+      <div class="expense-row">
+        <div class="expense-label">Rent / premises</div>
+        <div class="expense-input-wrap">
+          <input class="expense-input" id="exp-rent" type="number" placeholder="0" oninput="updateTotal()">
+        </div>
+      </div>
+      <div class="expense-row">
+        <div class="expense-label">Vehicle / travel</div>
+        <div class="expense-input-wrap">
+          <input class="expense-input" id="exp-vehicle" type="number" placeholder="0" oninput="updateTotal()">
+        </div>
+      </div>
+      <div class="expense-row">
+        <div class="expense-label">Depreciation</div>
+        <div class="expense-input-wrap">
+          <input class="expense-input" id="exp-depreciation" type="number" placeholder="0" oninput="updateTotal()">
+        </div>
+      </div>
+      <div class="expense-row">
+        <div class="expense-label">All other expenses</div>
+        <div class="expense-input-wrap">
+          <input class="expense-input" id="exp-other" type="number" placeholder="0" oninput="updateTotal()">
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="section-label">Loan details (for capacity estimate)</div>
+      <div class="bas-quarter" style="margin-bottom:10px;">
+        <div class="bas-quarter-label">Loan needed</div>
+        <div class="bas-input-wrap">
+          <input class="bas-input" id="loan-needed" type="number" placeholder="650,000" oninput="updateTotal()">
+        </div>
+      </div>
+
+      <button class="calc-btn" onclick="calculate()">Calculate my borrowing power →</button>
+    </div>
+  </div>
+
+  <!-- RESULTS PANEL -->
+  <div class="results-panel">
+
+    <!-- Explainer -->
+    <div class="explainer">
+      <div class="explainer-title">How lenders assess self-employed income differently</div>
+      <div class="explainer-row">
+        <div class="explainer-icon">🏦</div>
+        <div><strong>Major banks (net profit):</strong> Use your tax return net profit after all expenses. High deductions = lower assessed income = smaller loan.</div>
+      </div>
+      <div class="explainer-row">
+        <div class="explainer-icon">⚡</div>
+        <div><strong>Specialist lenders (gross revenue):</strong> Use your total BAS turnover before expenses. More accurately reflects what you actually earn.</div>
+      </div>
+      <div class="explainer-row">
+        <div class="explainer-icon">✚</div>
+        <div><strong>Addbacks (Pepper Money):</strong> Add depreciation, interest, and one-off costs back to your net profit — increases assessable income significantly.</div>
+      </div>
+    </div>
+
+    <!-- Results or empty state -->
+    <div id="results-container">
+      <div class="empty-state">
+        <div class="empty-icon">📊</div>
+        <div class="empty-title">Enter your BAS figures to see results</div>
+        <div class="empty-sub">Fill in your last 4 quarters of BAS G1 figures on the left — we'll show you exactly how each lender calculates your income.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+let bizStruct = 'sole_trader';
+
+function selectStruct(el, val) {
+  document.querySelectorAll('.struct-pill').forEach(p => p.classList.remove('selected'));
+  el.classList.add('selected');
+  bizStruct = val;
+  if (getGrossRevenue() > 0) calculate();
+}
+
+function fmt(n) {
+  return '$' + Math.round(n).toLocaleString('en-AU');
+}
+
+function getGrossRevenue() {
+  const q = ['bas-q1','bas-q2','bas-q3','bas-q4'].map(id => parseFloat(document.getElementById(id).value)||0);
+  return q.reduce((a,b) => a+b, 0);
+}
+
+function getTotalExpenses() {
+  return ['exp-cogs','exp-rent','exp-vehicle','exp-depreciation','exp-other']
+    .map(id => parseFloat(document.getElementById(id).value)||0)
+    .reduce((a,b) => a+b, 0);
+}
+
+function getDepreciation() {
+  return parseFloat(document.getElementById('exp-depreciation').value)||0;
+}
+
+function updateTotal() {
+  const gross = getGrossRevenue();
+  document.getElementById('bas-total-display').textContent = fmt(gross);
+}
+
+function calculate() {
+  const gross = getGrossRevenue();
+  if (!gross) {
+    alert('Please enter at least one BAS quarter figure.');
+    return;
+  }
+
+  const expenses = getTotalExpenses();
+  const depreciation = getDepreciation();
+  const net = Math.max(gross - expenses, 0);
+  const netWithAddback = net + depreciation;
+  const loanNeeded = parseFloat(document.getElementById('loan-needed').value)||0;
+
+  // Each lender's assessment method
+  const lenders = [
+    {
+      name: 'Pepper Money',
+      cat: 'Non-bank specialist',
+      top: true,
+      method: 'net_profit_addback',
+      assessed: netWithAddback,
+      rate: 6.49,
+      tags: ['Net profit + addbacks', 'Depreciation added back', 'BAS accepted'],
+      explanation: `Pepper takes your net profit (${fmt(net)}) and adds back depreciation (${fmt(depreciation)}) and any non-recurring expenses. This is the most borrower-friendly assessment method for tax-minimising businesses.`,
+      color: 'bar-green',
+    },
+    {
+      name: 'La Trobe Financial',
+      cat: 'Non-bank · Low-doc',
+      top: false,
+      method: 'gross_revenue',
+      assessed: gross * 0.6, // apply 60% shading for expenses
+      rate: 7.15,
+      tags: ['Gross revenue basis', '60% income shading', 'Low-doc available'],
+      explanation: `La Trobe uses your gross BAS revenue with a 40% expense buffer applied. They don't require you to prove individual expenses — making this ideal if you have high deductions but limited documentation.`,
+      color: 'bar-green',
+    },
+    {
+      name: 'Liberty Financial',
+      cat: 'Non-bank · CDR live',
+      top: false,
+      method: 'gross_revenue',
+      assessed: gross * 0.65,
+      rate: 6.74,
+      tags: ['Gross revenue basis', '65% income shading', 'BAS + accountant letter'],
+      explanation: `Liberty applies 65% of your gross BAS revenue as assessable income. Combined with their low-doc product, this gives you a strong assessed income without full financials.`,
+      color: 'bar-blue',
+    },
+    {
+      name: 'Bluestone',
+      cat: 'Non-bank specialist',
+      top: false,
+      method: 'net_profit',
+      assessed: net,
+      rate: 7.35,
+      tags: ['Net profit only', 'Full financials needed', 'No addbacks'],
+      explanation: `Bluestone uses your net profit from tax returns or financials. If you have significant deductions, this will result in a lower assessed income than gross revenue lenders.`,
+      color: 'bar-amber',
+    },
+    {
+      name: 'Macquarie Bank',
+      cat: 'Bank · CDR live',
+      top: false,
+      method: 'net_profit',
+      assessed: net,
+      rate: 6.19,
+      tags: ['Net profit only', '2yr tax returns required', 'No low-doc'],
+      explanation: `Macquarie uses your declared net profit from the last 2 years of tax returns and averages them. Best rate on market but strictest documentation — works well if your declared income is high.`,
+      color: 'bar-amber',
+    },
+    {
+      name: 'ANZ',
+      cat: 'Major bank · CDR live',
+      top: false,
+      method: 'net_profit',
+      assessed: net,
+      rate: 6.29,
+      tags: ['Net profit only', 'Standard bank policy', 'No BAS alternative'],
+      explanation: `ANZ applies standard bank policy — net profit from 2 years tax returns, averaged. No alternative documentation accepted for self-employed income assessment.`,
+      color: 'bar-amber',
+    },
+  ];
+
+  // Sort by assessed income descending
+  lenders.sort((a, b) => b.assessed - a.assessed);
+  const maxAssessed = lenders[0].assessed;
+  lenders[0].top = true;
+
+  // Rough borrowing capacity: assessed income × 6 (simplified)
+  const capacityMultiplier = 6;
+
+  let html = `
+    <div class="income-summary">
+      <div class="income-summary-title">Your income summary</div>
+      <div class="income-grid">
+        <div class="income-item">
+          <div class="income-val">${fmt(gross)}</div>
+          <div class="income-label">Gross annual revenue (BAS)</div>
+        </div>
+        <div class="income-item">
+          <div class="income-val">${fmt(net)}</div>
+          <div class="income-label">Net profit (after expenses)</div>
+        </div>
+        <div class="income-item">
+          <div class="income-val highlight">${fmt(maxAssessed)}</div>
+          <div class="income-label">Best assessed income (Pepper)</div>
+          ${depreciation > 0 ? `<div class="income-delta">+${fmt(depreciation)} addback</div>` : ''}
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:16px;">
+      <div class="lender-breakdown-title">How each lender sees your income</div>
+      <div class="lender-breakdown-sub">Same business, same revenue — very different assessed income depending on the lender's method.</div>
+    </div>
+  `;
+
+  lenders.forEach(l => {
+    const barPct = maxAssessed > 0 ? Math.round((l.assessed / maxAssessed) * 100) : 0;
+    const capacity = Math.round(l.assessed * capacityMultiplier);
+
+    html += `
+      <div class="lender-income-card ${l.top ? 'top' : ''}">
+        <div class="lic-top">
+          <div>
+            ${l.top ? '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--green);margin-bottom:3px;">Highest assessed income</div>' : ''}
+            <div class="lic-name">${l.name}</div>
+            <div class="lic-cat">${l.cat}</div>
+          </div>
+          <div class="lic-assessed">
+            <div class="lic-assessed-val">${fmt(l.assessed)}</div>
+            <div class="lic-assessed-label">assessed p.a.</div>
+            <div style="font-size:11px;color:var(--ink-muted);margin-top:2px;">${l.rate}% variable</div>
+          </div>
+        </div>
+
+        <div class="lic-bar-row">
+          <div class="lic-bar-label">Assessed income</div>
+          <div class="lic-bar-track">
+            <div class="lic-bar-fill ${l.color}" style="width:${barPct}%"></div>
+          </div>
+          <div style="font-size:11px;color:var(--ink-muted);min-width:32px;text-align:right;">${barPct}%</div>
+        </div>
+
+        <div class="lic-method">
+          ${l.tags.map(t => {
+            const cls = t.includes('Gross') ? 'tag-bas' : t.includes('addback') ? 'tag-addback' : 'tag-method';
+            return `<span class="lic-tag ${cls}">${t}</span>`;
+          }).join('')}
+        </div>
+
+        <div class="lic-explanation">${l.explanation}</div>
+
+        ${loanNeeded > 0 ? `
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+            <div style="font-size:12px;color:var(--ink-muted);">Est. borrowing capacity</div>
+            <div style="font-size:16px;font-weight:600;color:${capacity >= loanNeeded ? 'var(--green)' : 'var(--red)'};">
+              ${fmt(capacity)}
+              <span style="font-size:11px;margin-left:4px;">${capacity >= loanNeeded ? '✓ covers your loan' : '✗ below target'}</span>
+            </div>
+          </div>
+        ` : ''}
+      </div>
+    `;
+  });
+
+  // Capacity comparison
+  if (loanNeeded > 0) {
+    const bestCapacity = fmt(lenders[0].assessed * capacityMultiplier);
+    const worstCapacity = fmt(lenders[lenders.length-1].assessed * capacityMultiplier);
+    html += `
+      <div class="capacity-banner">
+        <div class="capacity-title">Borrowing capacity — lender by lender</div>
+        <div style="font-size:13px;color:var(--ink-light);line-height:1.7;">
+          Based on ${fmt(lenders[0].assessed)} assessed income × 6x multiplier (simplified estimate). Actual capacity depends on existing debts, living expenses (HEM), and lender-specific serviceability calculators.
+        </div>
+        <div class="capacity-grid">
+          ${lenders.slice(0,4).map(l => `
+            <div class="capacity-item">
+              <div class="capacity-lender">${l.name}</div>
+              <div class="capacity-amount">${fmt(l.assessed * capacityMultiplier)}</div>
+              <div class="capacity-note">${l.assessed * capacityMultiplier >= loanNeeded ? '✓ Can cover your loan' : '✗ Below your target'}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  // CTA
+  html += `
+    <div style="background:var(--green);border-radius:var(--radius-lg);padding:24px 28px;margin-top:20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+      <div>
+        <div style="font-family:'DM Serif Display',serif;font-size:20px;color:white;margin-bottom:4px;">Ready to apply with ${lenders[0].name}?</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.7);">A specialist broker will review your profile and submit to ${lenders[0].name} — no credit check to get started.</div>
+      </div>
+      <button onclick="alert('Redirecting to broker connection flow...')" style="background:white;color:var(--green);padding:13px 24px;border-radius:40px;font-size:14px;font-weight:600;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;flex-shrink:0;">Connect me with a broker →</button>
+    </div>
+  `;
+
+  document.getElementById('results-container').innerHTML = html;
+
+  // Animate bars after render
+  setTimeout(() => {
+    document.querySelectorAll('.lic-bar-fill').forEach(bar => {
+      const w = bar.style.width;
+      bar.style.width = '0%';
+      requestAnimationFrame(() => { bar.style.width = w; });
+    });
+  }, 50);
+}
+
+// Pre-fill demo values on load so people see results immediately
+window.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('bas-q1').value = 42500;
+  document.getElementById('bas-q2').value = 38200;
+  document.getElementById('bas-q3').value = 45100;
+  document.getElementById('bas-q4').value = 39800;
+  document.getElementById('exp-cogs').value = 15000;
+  document.getElementById('exp-vehicle').value = 8000;
+  document.getElementById('exp-depreciation').value = 6500;
+  document.getElementById('exp-other').value = 4000;
+  document.getElementById('loan-needed').value = 650000;
+  updateTotal();
+  calculate();
+});
+</script>
+</body>
+</html>

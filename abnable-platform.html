@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ABNable — CDR Lender Integration</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink: #0f1a12; --ink-light: #3d5040; --ink-muted: #7a8f7d;
+  --bg: #f4f1eb; --bg-card: #fff; --bg-warm: #ede9e0;
+  --green: #1a6b3c; --green-light: #e8f4ed; --green-mid: #2d8a52;
+  --accent: #c8873a; --accent-light: #fdf0e3;
+  --red: #c0392b; --red-light: #fdf0ee;
+  --blue: #1a4a8b; --blue-light: #e8f0fd;
+  --border: #ddd8ce; --shadow: 0 2px 12px rgba(15,26,18,.08);
+  --shadow-lg: 0 8px 40px rgba(15,26,18,.12); --radius: 12px; --radius-lg: 20px;
+  --mono: 'DM Mono', monospace;
+}
+
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--ink); font-size: 15px; line-height: 1.6; }
+
+/* NAV */
+nav { display:flex; align-items:center; justify-content:space-between; padding:16px 32px; background:var(--bg); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:100; }
+.logo { font-family:'DM Serif Display',serif; font-size:20px; color:var(--green); }
+.logo span { color:var(--accent); }
+.nav-tabs { display:flex; gap:4px; }
+.nav-tab { padding:8px 16px; border-radius:40px; font-size:13px; cursor:pointer; border:none; background:transparent; color:var(--ink-muted); font-family:'DM Sans',sans-serif; transition:all .2s; }
+.nav-tab:hover { background:var(--bg-warm); color:var(--ink); }
+.nav-tab.active { background:var(--green); color:white; }
+
+/* LAYOUT */
+.page { display:none; padding:32px; max-width:1100px; margin:0 auto; }
+.page.active { display:block; animation:fadeIn .3s ease; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+
+/* PAGE HEADERS */
+.page-header { margin-bottom:28px; }
+.page-eyebrow { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.1em; color:var(--ink-muted); margin-bottom:6px; }
+h1 { font-family:'DM Serif Display',serif; font-size:34px; letter-spacing:-.5px; color:var(--ink); margin-bottom:6px; }
+.page-sub { font-size:16px; color:var(--ink-light); }
+
+/* CARDS */
+.card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:24px; }
+.card-sm { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); padding:16px; }
+
+/* GRID */
+.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
+
+/* STATUS BADGES */
+.badge { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:600; padding:3px 10px; border-radius:20px; text-transform:uppercase; letter-spacing:.04em; }
+.badge-green { background:var(--green-light); color:var(--green); }
+.badge-amber { background:var(--accent-light); color:var(--accent); }
+.badge-blue { background:var(--blue-light); color:var(--blue); }
+.badge-red { background:var(--red-light); color:var(--red); }
+.badge-gray { background:var(--bg-warm); color:var(--ink-muted); }
+.badge::before { content:''; width:5px; height:5px; border-radius:50%; background:currentColor; }
+
+/* API STATUS PANEL */
+.api-panel { background:var(--ink); border-radius:var(--radius-lg); padding:28px; margin-bottom:28px; }
+.api-panel-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+.api-panel-title { font-family:'DM Serif Display',serif; font-size:20px; color:white; }
+.api-live-badge { display:flex; align-items:center; gap:8px; font-size:12px; color:rgba(255,255,255,.6); }
+.pulse { width:8px; height:8px; border-radius:50%; background:#4ade80; box-shadow:0 0 0 0 rgba(74,222,128,.4); animation:pulse 2s infinite; }
+@keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(74,222,128,.4)} 70%{box-shadow:0 0 0 8px rgba(74,222,128,0)} 100%{box-shadow:0 0 0 0 rgba(74,222,128,0)} }
+
+.lender-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.lender-api-card { background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); border-radius:var(--radius); padding:14px; }
+.lender-api-card.has-cdr { border-color:rgba(74,222,128,.3); }
+.lender-api-name { font-size:13px; font-weight:500; color:white; margin-bottom:4px; }
+.lender-api-endpoint { font-family:var(--mono); font-size:10px; color:rgba(255,255,255,.35); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:8px; }
+.lender-api-status { font-size:11px; }
+.status-live { color:#4ade80; }
+.status-2026 { color:#fbbf24; }
+.status-direct { color:#60a5fa; }
+
+.fetch-btn { background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2); color:white; padding:8px 16px; border-radius:40px; font-size:12px; font-family:'DM Sans',sans-serif; cursor:pointer; transition:all .2s; margin-top:16px; }
+.fetch-btn:hover { background:rgba(255,255,255,.15); }
+.fetch-btn:disabled { opacity:.4; cursor:not-allowed; }
+
+/* CODE BLOCK */
+.code-block { background:rgba(0,0,0,.3); border-radius:var(--radius); padding:16px; font-family:var(--mono); font-size:11px; color:#a3e8bb; overflow-x:auto; margin-top:12px; line-height:1.8; max-height:240px; overflow-y:auto; }
+.code-key { color:#93c5fd; }
+.code-str { color:#fcd34d; }
+.code-num { color:#6ee7b7; }
+.code-bool { color:#f9a8d4; }
+.code-comment { color:rgba(255,255,255,.3); }
+
+/* MATCHING ENGINE */
+.profile-form { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:24px; }
+.field { }
+.field label { display:block; font-size:12px; font-weight:500; color:var(--ink-muted); text-transform:uppercase; letter-spacing:.04em; margin-bottom:6px; }
+.field input, .field select { width:100%; padding:10px 14px; border:1.5px solid var(--border); border-radius:var(--radius); font-size:14px; font-family:'DM Sans',sans-serif; color:var(--ink); background:white; outline:none; transition:border-color .2s; }
+.field input:focus, .field select:focus { border-color:var(--green); }
+.field-row { display:flex; gap:12px; align-items:center; margin-bottom:8px; }
+.checkbox-label { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--ink-light); cursor:pointer; }
+.checkbox-label input { width:16px; height:16px; accent-color:var(--green); }
+
+.run-btn { background:var(--green); color:white; padding:14px 32px; border-radius:40px; font-size:15px; font-weight:500; border:none; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all .2s; display:flex; align-items:center; gap:8px; }
+.run-btn:hover { background:var(--green-mid); transform:translateY(-1px); }
+.run-btn::before { content:'⚡'; }
+
+/* MATCH RESULTS */
+.match-results { margin-top:24px; }
+.match-card { border:1.5px solid var(--border); border-radius:var(--radius-lg); padding:20px; margin-bottom:12px; transition:all .2s; }
+.match-card.eligible { border-color:var(--green); background:white; }
+.match-card.ineligible { opacity:.6; background:var(--bg-warm); }
+.match-top { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:12px; }
+.match-name { font-size:17px; font-weight:600; color:var(--ink); }
+.match-score-bar { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.score-track { flex:1; height:6px; background:var(--border); border-radius:3px; overflow:hidden; }
+.score-fill { height:100%; background:var(--green); border-radius:3px; transition:width .8s ease; }
+.score-num { font-size:12px; font-weight:600; color:var(--green); min-width:32px; text-align:right; }
+.match-reasons { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+.reason-tag { font-size:11px; background:var(--green-light); color:var(--green); padding:3px 10px; border-radius:20px; }
+.blocker-tag { font-size:11px; background:var(--red-light); color:var(--red); padding:3px 10px; border-radius:20px; }
+.match-policy { font-family:var(--mono); font-size:11px; color:var(--ink-muted); background:var(--bg-warm); border-radius:8px; padding:10px 12px; line-height:1.8; }
+
+/* COACHING */
+.coaching-box { background:var(--accent-light); border:1px solid #f0c88a; border-radius:var(--radius-lg); padding:24px; margin-top:20px; }
+.coaching-title { font-family:'DM Serif Display',serif; font-size:18px; color:var(--accent); margin-bottom:14px; }
+.coaching-item { display:flex; gap:12px; margin-bottom:12px; }
+.coaching-num { background:var(--accent); color:white; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0; margin-top:1px; }
+.coaching-text { font-size:13px; color:var(--ink-light); line-height:1.6; }
+.coaching-impact { font-size:11px; font-weight:600; color:var(--accent); margin-top:3px; }
+
+/* BROKER DASHBOARD */
+.broker-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
+.stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:24px; }
+.stat-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); padding:16px; }
+.stat-val { font-family:'DM Serif Display',serif; font-size:28px; color:var(--green); line-height:1; margin-bottom:4px; }
+.stat-label { font-size:12px; color:var(--ink-muted); }
+
+.client-table { width:100%; border-collapse:collapse; }
+.client-table th { text-align:left; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-muted); padding:10px 14px; border-bottom:2px solid var(--border); }
+.client-table td { padding:12px 14px; border-bottom:1px solid var(--border); font-size:13px; vertical-align:middle; }
+.client-table tr:hover td { background:var(--bg-warm); }
+.client-name { font-weight:500; color:var(--ink); }
+.client-sub { font-size:11px; color:var(--ink-muted); margin-top:2px; }
+.progress-cell { display:flex; align-items:center; gap:8px; }
+.mini-bar { width:80px; height:4px; background:var(--border); border-radius:2px; overflow:hidden; }
+.mini-fill { height:100%; background:var(--green); border-radius:2px; }
+.action-btn { font-size:12px; color:var(--green); background:var(--green-light); border:none; padding:5px 12px; border-radius:20px; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all .2s; }
+.action-btn:hover { background:var(--green); color:white; }
+
+/* POLICY EXPLORER */
+.policy-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+.policy-card { background:var(--bg-card); border:1.5px solid var(--border); border-radius:var(--radius-lg); padding:20px; cursor:pointer; transition:all .2s; }
+.policy-card:hover { border-color:var(--green); box-shadow:var(--shadow); }
+.policy-card.selected { border-color:var(--green); background:var(--green-light); }
+.policy-lender { font-size:16px; font-weight:600; color:var(--ink); margin-bottom:4px; }
+.policy-type { font-size:11px; color:var(--ink-muted); text-transform:uppercase; letter-spacing:.06em; margin-bottom:12px; }
+.policy-row { display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--border); font-size:13px; }
+.policy-row:last-child { border-bottom:none; }
+.policy-key { color:var(--ink-muted); }
+.policy-val { font-weight:500; color:var(--ink); }
+.policy-val.yes { color:var(--green); }
+.policy-val.no { color:var(--red); }
+
+@media(max-width:768px) {
+  .page { padding:20px; }
+  .grid-2,.grid-3,.lender-grid,.profile-form,.stats-row,.policy-grid { grid-template-columns:1fr; }
+  nav { padding:12px 16px; }
+  .nav-tabs { display:none; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">ABN<span>able</span> <span style="font-family:'DM Sans';font-size:12px;font-weight:400;color:var(--ink-muted);margin-left:8px;">Platform v0.1</span></div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('api')">CDR Integration</button>
+    <button class="nav-tab" onclick="showPage('matching')">Matching Engine</button>
+    <button class="nav-tab" onclick="showPage('broker')">Broker Dashboard</button>
+    <button class="nav-tab" onclick="showPage('policy')">Policy Explorer</button>
+  </div>
+</nav>
+
+<!-- PAGE 1: CDR INTEGRATION -->
+<div class="page active" id="page-api">
+  <div class="page-header">
+    <div class="page-eyebrow">Australian Open Banking</div>
+    <h1>CDR Lender Integration</h1>
+    <p class="page-sub">Live connection to 121 Australian lender APIs via the Consumer Data Right framework. Specialist non-banks join CDR July 2026.</p>
+  </div>
+
+  <div class="api-panel">
+    <div class="api-panel-header">
+      <div class="api-panel-title">Lender API Registry</div>
+      <div class="api-live-badge">
+        <div class="pulse"></div>
+        CDR Standard v3 · 6 lenders indexed
+      </div>
+    </div>
+
+    <div class="lender-grid">
+      <div class="lender-api-card">
+        <div class="lender-api-name">Liberty Financial</div>
+        <div class="lender-api-endpoint">services.liberty.com.au/cds-au/v1</div>
+        <div class="lender-api-status status-live">✓ CDR Live · Product data available</div>
+      </div>
+      <div class="lender-api-card">
+        <div class="lender-api-name">Macquarie Bank</div>
+        <div class="lender-api-endpoint">api.macquariebank.io/cds-au/v1</div>
+        <div class="lender-api-status status-live">✓ CDR Live · Product data available</div>
+      </div>
+      <div class="lender-api-card">
+        <div class="lender-api-name">ANZ</div>
+        <div class="lender-api-endpoint">api.anz/cds-au/v1</div>
+        <div class="lender-api-status status-live">✓ CDR Live · Product data available</div>
+      </div>
+      <div class="lender-api-card">
+        <div class="lender-api-name">Pepper Money</div>
+        <div class="lender-api-endpoint">No CDR endpoint yet</div>
+        <div class="lender-api-status status-2026">⏳ CDR July 2026 · Direct relationship</div>
+      </div>
+      <div class="lender-api-card">
+        <div class="lender-api-name">La Trobe Financial</div>
+        <div class="lender-api-endpoint">No CDR endpoint yet</div>
+        <div class="lender-api-status status-2026">⏳ CDR July 2026 · Direct relationship</div>
+      </div>
+      <div class="lender-api-card">
+        <div class="lender-api-name">Bluestone</div>
+        <div class="lender-api-endpoint">No CDR endpoint yet</div>
+        <div class="lender-api-status status-2026">⏳ CDR July 2026 · Direct relationship</div>
+      </div>
+    </div>
+
+    <button class="fetch-btn" onclick="simulateFetch()">⚡ Simulate CDR API fetch — Liberty Financial</button>
+    <div class="code-block" id="api-output">
+<span class="code-comment">// Waiting for fetch...</span>
+<span class="code-comment">// GET https://services.liberty.com.au/api/data-holder-public/cds-au/v1/banking/products</span>
+<span class="code-comment">// Headers: { "x-v": "3", "Accept": "application/json" }</span>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:12px;">What CDR gives us (free)</div>
+      <div style="font-size:13px;color:var(--ink-light);line-height:1.9;">
+        ✓ Live interest rates (variable + fixed)<br>
+        ✓ Comparison rates<br>
+        ✓ Max LVR per product<br>
+        ✓ Fees (application, ongoing, discharge)<br>
+        ✓ Product features (offset, redraw, etc)<br>
+        ✓ Eligibility criteria (basic)
+      </div>
+    </div>
+    <div class="card">
+      <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:12px;">What we build on top (our moat)</div>
+      <div style="font-size:13px;color:var(--ink-light);line-height:1.9;">
+        🔑 Self-employed credit policy database<br>
+        🔑 Minimum ABN age per lender<br>
+        🔑 BAS vs tax return requirements<br>
+        🔑 Low-doc product mapping<br>
+        🔑 Income assessment method (gross vs net)<br>
+        🔑 Depreciation addback policies
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px;">
+    <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:12px;">Data Strategy — 3 layers</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+      <div>
+        <div class="badge badge-green" style="margin-bottom:8px;">Layer 1 — Now</div>
+        <div style="font-size:13px;font-weight:500;color:var(--ink);margin-bottom:4px;">CDR Public APIs</div>
+        <div style="font-size:12px;color:var(--ink-muted);line-height:1.7;">Rates, LVR, fees from 121 lenders. Free, no auth. Build this week.</div>
+      </div>
+      <div>
+        <div class="badge badge-amber" style="margin-bottom:8px;">Layer 2 — Month 2</div>
+        <div style="font-size:13px;font-weight:500;color:var(--ink);margin-bottom:4px;">Aggregator Panel</div>
+        <div style="font-size:12px;color:var(--ink-muted);line-height:1.7;">Join Connective or Finsure. Full policy data + BDM access for 75+ lenders.</div>
+      </div>
+      <div>
+        <div class="badge badge-blue" style="margin-bottom:8px;">Layer 3 — Month 4</div>
+        <div style="font-size:13px;font-weight:500;color:var(--ink);margin-bottom:4px;">Direct Agreements</div>
+        <div style="font-size:12px;color:var(--ink-muted);line-height:1.7;">Pepper, La Trobe BDM relationships. Custom self-employed criteria + priority referrals.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 2: MATCHING ENGINE -->
+<div class="page" id="page-matching">
+  <div class="page-header">
+    <div class="page-eyebrow">AI Matching Engine</div>
+    <h1>Live Lender Matching</h1>
+    <p class="page-sub">Enter a borrower profile and see our matching engine score each lender in real time.</p>
+  </div>
+
+  <div class="card" style="margin-bottom:20px;">
+    <div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:16px;">Borrower profile</div>
+    <div class="profile-form">
+      <div class="field">
+        <label>Business structure</label>
+        <select id="m-biz-type">
+          <option value="sole_trader">Sole trader</option>
+          <option value="company">Company (Pty Ltd)</option>
+          <option value="partnership">Partnership</option>
+          <option value="trust">Trust</option>
+          <option value="contractor">Contractor / Gig</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>ABN age (months)</label>
+        <input type="number" id="m-abn-age" value="18" min="1" max="120">
+      </div>
+      <div class="field">
+        <label>Annual income (AUD)</label>
+        <input type="text" id="m-income" value="$120,000">
+      </div>
+      <div class="field">
+        <label>Loan amount</label>
+        <input type="text" id="m-loan" value="$650,000">
+      </div>
+      <div class="field">
+        <label>Property value</label>
+        <input type="text" id="m-property" value="$850,000">
+      </div>
+      <div class="field">
+        <label>Industry</label>
+        <select id="m-industry">
+          <option>IT / Technology</option>
+          <option>Construction / Trades</option>
+          <option>Healthcare</option>
+          <option>Consulting</option>
+          <option>Creative / Media</option>
+          <option>Transport</option>
+          <option>Other</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:16px;margin-bottom:20px;">
+      <label class="checkbox-label"><input type="checkbox" id="m-tax-returns"> 2 years tax returns lodged</label>
+      <label class="checkbox-label"><input type="checkbox" id="m-bas" checked> 4+ BAS statements available</label>
+      <label class="checkbox-label"><input type="checkbox" id="m-accountant" checked> Accountant's letter available</label>
+      <label class="checkbox-label"><input type="checkbox" id="m-deductions" checked> High business deductions</label>
+    </div>
+    <button class="run-btn" onclick="runMatching()">Run matching engine</button>
+  </div>
+
+  <div class="match-results" id="match-results"></div>
+</div>
+
+<!-- PAGE 3: BROKER DASHBOARD -->
+<div class="page" id="page-broker">
+  <div class="broker-header">
+    <div>
+      <div class="page-eyebrow">Broker Portal</div>
+      <h1>Client Dashboard</h1>
+    </div>
+    <button class="run-btn" onclick="alert('Add client flow coming next sprint!')">+ Add ABN client</button>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-val">12</div>
+      <div class="stat-label">Active ABN clients</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val">4</div>
+      <div class="stat-label">Ready to submit</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val">$4.2M</div>
+      <div class="stat-label">Pipeline value</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val">$8,400</div>
+      <div class="stat-label">Est. commissions</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <table class="client-table">
+      <thead>
+        <tr>
+          <th>Client</th>
+          <th>Loan</th>
+          <th>Best match</th>
+          <th>Doc readiness</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="client-table-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- PAGE 4: POLICY EXPLORER -->
+<div class="page" id="page-policy">
+  <div class="page-header">
+    <div class="page-eyebrow">Lender Intelligence</div>
+    <h1>Self-Employed Policy Explorer</h1>
+    <p class="page-sub">Our proprietary database of lender policies for ABN holders. Updated from BDM relationships and aggregator data.</p>
+  </div>
+
+  <div class="policy-grid" id="policy-grid"></div>
+
+  <div class="card" style="margin-top:20px;" id="policy-detail" style="display:none;">
+    <div style="font-size:14px;font-weight:600;color:var(--ink);margin-bottom:12px;">Ask the Lender Policy AI</div>
+    <div style="display:flex;gap:12px;">
+      <input class="field input" style="flex:1;padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--radius);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;" id="policy-question" placeholder='e.g. "Will Pepper approve a sole trader with 14 months ABN and no tax returns?"'>
+      <button class="run-btn" style="white-space:nowrap;" onclick="askPolicyAI()">Ask AI</button>
+    </div>
+    <div id="ai-answer" style="margin-top:16px;display:none;"></div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// PAGE NAVIGATION
+// ============================================================
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  event.target.classList.add('active');
+  if (id === 'broker') renderBrokerTable();
+  if (id === 'policy') renderPolicyGrid();
+  if (id === 'matching' && !document.getElementById('match-results').innerHTML) runMatching();
+}
+
+// ============================================================
+// CDR API SIMULATION
+// ============================================================
+function simulateFetch() {
+  const btn = document.querySelector('.fetch-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Fetching from Liberty CDR endpoint...';
+
+  const output = document.getElementById('api-output');
+  output.innerHTML = '<span class="code-comment">// GET https://services.liberty.com.au/api/data-holder-public/cds-au/v1/banking/products?product-category=RESIDENTIAL_MORTGAGES</span>\n<span class="code-comment">// Connecting...</span>';
+
+  setTimeout(() => {
+    const mockResponse = {
+      data: {
+        products: [
+          {
+            productId: "LIB-STAR-VAR-001",
+            name: "Liberty Star Variable Home Loan",
+            description: "Flexible variable rate home loan for owner-occupiers",
+            effectiveFrom: "2025-07-01T00:00:00Z",
+            productCategory: "RESIDENTIAL_MORTGAGES",
+            lending_rates: [
+              { lendingRateType: "VARIABLE", rate: "0.0649", additionalInfo: "Owner-occupied, P&I" },
+              { lendingRateType: "COMPARISON", rate: "0.0685" }
+            ],
+            constraints: [
+              { constraintType: "MIN_BALANCE", additionalValue: "100000" },
+              { constraintType: "MAX_BALANCE", additionalValue: "2500000" }
+            ],
+            features: [
+              { featureType: "OFFSET", additionalInfo: "100% offset account" },
+              { featureType: "REDRAW", additionalInfo: "Unlimited free redraws" }
+            ]
+          },
+          {
+            productId: "LIB-ALTDOC-001",
+            name: "Liberty Alt Doc Home Loan",
+            description: "Alternative documentation home loan for self-employed",
+            effectiveFrom: "2025-07-01T00:00:00Z",
+            productCategory: "RESIDENTIAL_MORTGAGES",
+            lending_rates: [
+              { lendingRateType: "VARIABLE", rate: "0.0749", additionalInfo: "Self-employed, alt-doc" },
+              { lendingRateType: "COMPARISON", rate: "0.0787" }
+            ],
+            constraints: [
+              { constraintType: "MIN_BALANCE", additionalValue: "50000" },
+              { constraintType: "MAX_BALANCE", additionalValue: "1500000" }
+            ]
+          }
+        ],
+        meta: { totalRecords: 2, totalPages: 1 }
+      },
+      links: { self: "https://services.liberty.com.au/api/data-holder-public/cds-au/v1/banking/products" }
+    };
+
+    output.innerHTML = formatJson(mockResponse);
+    btn.textContent = '✓ Fetched successfully — 2 products found';
+    btn.style.background = 'rgba(74,222,128,.15)';
+    btn.style.borderColor = 'rgba(74,222,128,.3)';
+    btn.style.color = '#4ade80';
+  }, 1800);
+}
+
+function formatJson(obj, indent = 0) {
+  const pad = '  '.repeat(indent);
+  if (typeof obj === 'string') return `<span class="code-str">"${obj}"</span>`;
+  if (typeof obj === 'number') return `<span class="code-num">${obj}</span>`;
+  if (typeof obj === 'boolean') return `<span class="code-bool">${obj}</span>`;
+  if (obj === null) return `<span class="code-bool">null</span>`;
+  if (Array.isArray(obj)) {
+    if (obj.length === 0) return '[]';
+    const items = obj.map(v => pad + '  ' + formatJson(v, indent + 1));
+    return '[\n' + items.join(',\n') + '\n' + pad + ']';
+  }
+  const keys = Object.keys(obj);
+  const items = keys.map(k => `${pad}  <span class="code-key">"${k}"</span>: ${formatJson(obj[k], indent + 1)}`);
+  return '{\n' + items.join(',\n') + '\n' + pad + '}';
+}
+
+// ============================================================
+// MATCHING ENGINE
+// ============================================================
+const LENDERS = {
+  pepper: {
+    name: "Pepper Money", category: "Non-bank specialist",
+    policy: { minAbnAge: 12, acceptsBas: true, acceptsLowDoc: true, minBas: 4, acceptsAccountant: true, maxLvr: 85, method: "net_profit_addback" },
+    rates: { variable: 6.49, comparison: 6.85 }, specialist: true,
+    notes: "Best for ABN holders with tax minimisation. Allows depreciation addback. Strong for contractors."
+  },
+  latrobe: {
+    name: "La Trobe Financial", category: "Non-bank specialist",
+    policy: { minAbnAge: 6, acceptsBas: true, acceptsLowDoc: true, minBas: 2, acceptsAccountant: true, maxLvr: 80, method: "gross_revenue" },
+    rates: { variable: 7.15, comparison: 7.52 }, specialist: true,
+    notes: "Most flexible on ABN age (6mo+). Gross revenue assessment — high deductions won't hurt you."
+  },
+  liberty: {
+    name: "Liberty Financial", category: "Non-bank (CDR live)",
+    policy: { minAbnAge: 12, acceptsBas: true, acceptsLowDoc: true, minBas: 2, acceptsAccountant: true, maxLvr: 80, method: "gross_revenue" },
+    rates: { variable: 6.74, comparison: 7.05 }, specialist: true,
+    notes: "CDR live. Alt-doc product strong for sole traders. Uses gross business income."
+  },
+  bluestone: {
+    name: "Bluestone Mortgages", category: "Non-bank specialist",
+    policy: { minAbnAge: 12, acceptsBas: true, acceptsLowDoc: true, minBas: 4, acceptsAccountant: false, maxLvr: 80, method: "net_profit" },
+    rates: { variable: 7.35, comparison: 7.68 }, specialist: true,
+    notes: "Good for established businesses with clean financials. Requires 4 BAS minimum."
+  },
+  macquarie: {
+    name: "Macquarie Bank", category: "Bank (CDR live)",
+    policy: { minAbnAge: 24, acceptsBas: false, acceptsLowDoc: false, minBas: 0, acceptsAccountant: false, maxLvr: 80, method: "net_profit" },
+    rates: { variable: 6.19, comparison: 6.22 }, specialist: false,
+    notes: "Best rates but strict. Full 2yr tax returns required. No low-doc."
+  },
+  anz: {
+    name: "ANZ", category: "Major bank (CDR live)",
+    policy: { minAbnAge: 24, acceptsBas: false, acceptsLowDoc: false, minBas: 0, acceptsAccountant: false, maxLvr: 80, method: "net_profit" },
+    rates: { variable: 6.29, comparison: 6.31 }, specialist: false,
+    notes: "Standard bank policy. Needs 2yr tax returns and consistently declared income."
+  }
+};
+
+function parseDollar(s) { return parseInt((s || '0').replace(/[$,]/g, '')) || 0; }
+
+function runMatching() {
+  const profile = {
+    bizType: document.getElementById('m-biz-type').value,
+    abnAgeMonths: parseInt(document.getElementById('m-abn-age').value) || 18,
+    loanAmount: parseDollar(document.getElementById('m-loan').value),
+    propertyValue: parseDollar(document.getElementById('m-property').value),
+    hasTaxReturns: document.getElementById('m-tax-returns').checked,
+    hasBas: document.getElementById('m-bas').checked,
+    hasAccountantLetter: document.getElementById('m-accountant').checked,
+    hasHighDeductions: document.getElementById('m-deductions').checked,
+  };
+
+  const lvr = profile.propertyValue ? (profile.loanAmount / profile.propertyValue) * 100 : 0;
+  const results = [];
+
+  for (const [id, lender] of Object.entries(LENDERS)) {
+    const p = lender.policy;
+    let score = 0;
+    const reasons = [];
+    const blockers = [];
+    let eligible = true;
+
+    if (profile.abnAgeMonths < p.minAbnAge) {
+      eligible = false;
+      blockers.push(`Needs ${p.minAbnAge}mo ABN (you have ${profile.abnAgeMonths}mo)`);
+    }
+    if (lvr > p.maxLvr) {
+      eligible = false;
+      blockers.push(`LVR ${lvr.toFixed(0)}% > max ${p.maxLvr}%`);
+    }
+    if (!p.acceptsLowDoc && !profile.hasTaxReturns) {
+      eligible = false;
+      blockers.push("Requires full tax returns (no low-doc)");
+    }
+
+    if (eligible) {
+      if (lender.specialist) { score += 30; }
+      if (p.acceptsLowDoc && !profile.hasTaxReturns) { score += 25; reasons.push("Accepts low-doc — no tax returns needed"); }
+      if (p.acceptsBas && profile.hasBas) { score += 20; reasons.push(`Accepts BAS statements as income proof`); }
+      if (p.acceptsAccountant && profile.hasAccountantLetter) { score += 10; reasons.push("Accepts accountant's letter"); }
+      if (p.method === 'gross_revenue' && profile.hasHighDeductions) { score += 20; reasons.push("Gross revenue assessment — deductions don't count against you"); }
+      if (p.method === 'net_profit_addback') { score += 15; reasons.push("Allows depreciation addback"); }
+      if (profile.abnAgeMonths - p.minAbnAge >= 12) score += 10;
+      if (lender.category.includes('Non-bank')) score += 15;
+    }
+
+    results.push({ id, ...lender, eligible, score, reasons, blockers, lvr });
+  }
+
+  results.sort((a, b) => b.score - a.score);
+
+  const container = document.getElementById('match-results');
+  const eligible = results.filter(r => r.eligible);
+  const ineligible = results.filter(r => !r.eligible);
+
+  let html = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+    <div style="font-size:16px;font-weight:600;color:var(--ink);">${eligible.length} lenders matched</div>
+    <div style="font-size:13px;color:var(--ink-muted);">LVR: ${lvr.toFixed(1)}% · Sorted by approval likelihood</div>
+  </div>`;
+
+  eligible.forEach((r, i) => {
+    const pct = Math.min(r.score, 100);
+    html += `<div class="match-card eligible" style="${i===0?'border-width:2px;':''}">
+      <div class="match-top">
+        <div>
+          ${i===0?'<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--green);margin-bottom:4px;">Best match</div>':''}
+          <div class="match-name">${r.name}</div>
+          <div style="font-size:12px;color:var(--ink-muted);margin-top:2px;">${r.category}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:22px;font-weight:600;color:var(--green);">${r.rates.variable.toFixed(2)}%</div>
+          <div style="font-size:11px;color:var(--ink-muted);">variable p.a.</div>
+        </div>
+      </div>
+      <div class="match-score-bar">
+        <div style="font-size:12px;color:var(--ink-muted);min-width:90px;">Match score</div>
+        <div class="score-track"><div class="score-fill" style="width:${pct}%"></div></div>
+        <div class="score-num">${pct}/100</div>
+      </div>
+      <div class="match-reasons">${r.reasons.map(r=>`<span class="reason-tag">${r}</span>`).join('')}</div>
+      <div class="match-policy">
+        minAbnAge: ${r.policy.minAbnAge}mo · maxLvr: ${r.policy.maxLvr}% · method: ${r.policy.method} · lowDoc: ${r.policy.acceptsLowDoc}
+        <br><span style="color:rgba(255,255,255,.5);">${r.notes}</span>
+      </div>
+    </div>`;
+  });
+
+  if (ineligible.length) {
+    html += `<div style="font-size:13px;font-weight:600;color:var(--ink-muted);margin:20px 0 12px;">Not eligible right now</div>`;
+    ineligible.forEach(r => {
+      html += `<div class="match-card ineligible">
+        <div class="match-top">
+          <div class="match-name" style="font-size:15px;">${r.name}</div>
+          <div style="font-size:13px;color:var(--ink-muted);">${r.rates.variable.toFixed(2)}% p.a.</div>
+        </div>
+        <div class="match-reasons">${r.blockers.map(b=>`<span class="blocker-tag">${b}</span>`).join('')}</div>
+      </div>`;
+    });
+  }
+
+  // Coaching
+  const coaching = [];
+  if (!profile.hasTaxReturns) coaching.push({ n:1, action:"Lodge outstanding tax returns", impact:"Unlocks major banks (ANZ, Macquarie) immediately", time:"4–8 weeks" });
+  if (profile.abnAgeMonths < 24) coaching.push({ n:2, action:`Reach 24 months ABN history (${24-profile.abnAgeMonths}mo away)`, impact:"Unlocks all lender tiers including major banks", time:`${24-profile.abnAgeMonths} months` });
+  if (lvr > 80) coaching.push({ n:3, action:"Reduce LVR below 80% with extra deposit", impact:"Opens specialist lenders at better rates, avoids LMI", time:"Savings dependent" });
+
+  if (coaching.length) {
+    html += `<div class="coaching-box"><div class="coaching-title">💡 How to improve your position</div>`;
+    coaching.forEach(c => {
+      html += `<div class="coaching-item">
+        <div class="coaching-num">${c.n}</div>
+        <div>
+          <div class="coaching-text">${c.action}</div>
+          <div class="coaching-impact">${c.impact} · ${c.time}</div>
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  container.innerHTML = html;
+}
+
+// ============================================================
+// BROKER DASHBOARD
+// ============================================================
+const CLIENTS = [
+  { name:"Marcus T.", sub:"Sole trader · IT contractor · 22mo ABN", loan:"$720K", match:"Pepper Money", docs:75, status:"ready", badge:"badge-green", statusText:"Ready to submit" },
+  { name:"Priya S.", sub:"Pty Ltd · Healthcare · 36mo ABN", loan:"$560K", match:"Liberty Financial", docs:90, status:"ready", badge:"badge-green", statusText:"Ready to submit" },
+  { name:"Jake R.", sub:"Contractor · Construction · 8mo ABN", loan:"$480K", match:"La Trobe Financial", docs:40, status:"docs", badge:"badge-amber", statusText:"Gathering docs" },
+  { name:"Sarah L.", sub:"Trust · Consulting · 48mo ABN", loan:"$950K", match:"Macquarie Bank", docs:60, status:"docs", badge:"badge-amber", statusText:"Awaiting tax returns" },
+  { name:"Tom W.", sub:"Sole trader · Media · 14mo ABN", loan:"$380K", match:"Bluestone", docs:55, status:"docs", badge:"badge-amber", statusText:"BAS statements needed" },
+  { name:"Anna K.", sub:"Partnership · Retail · 6mo ABN", loan:"$310K", match:"La Trobe Financial", docs:30, status:"new", badge:"badge-blue", statusText:"Just onboarded" },
+];
+
+function renderBrokerTable() {
+  const tbody = document.getElementById('client-table-body');
+  tbody.innerHTML = CLIENTS.map(c => `
+    <tr>
+      <td><div class="client-name">${c.name}</div><div class="client-sub">${c.sub}</div></td>
+      <td style="font-weight:500;">${c.loan}</td>
+      <td><span class="badge badge-green">${c.match}</span></td>
+      <td>
+        <div class="progress-cell">
+          <div class="mini-bar"><div class="mini-fill" style="width:${c.docs}%"></div></div>
+          <span style="font-size:12px;color:var(--ink-muted);">${c.docs}%</span>
+        </div>
+      </td>
+      <td><span class="badge ${c.badge}">${c.statusText}</span></td>
+      <td><button class="action-btn" onclick="alert('Client profile coming soon!')">View →</button></td>
+    </tr>
+  `).join('');
+}
+
+// ============================================================
+// POLICY EXPLORER
+// ============================================================
+function renderPolicyGrid() {
+  const grid = document.getElementById('policy-grid');
+  grid.innerHTML = Object.entries(LENDERS).map(([id, l]) => {
+    const p = l.policy;
+    return `<div class="policy-card ${l.specialist?'':''}">
+      <div class="policy-lender">${l.name}</div>
+      <div class="policy-type">${l.category}</div>
+      <div class="policy-row"><span class="policy-key">Min ABN age</span><span class="policy-val">${p.minAbnAge} months</span></div>
+      <div class="policy-row"><span class="policy-key">Max LVR</span><span class="policy-val">${p.maxLvr}%</span></div>
+      <div class="policy-row"><span class="policy-key">Low-doc available</span><span class="policy-val ${p.acceptsLowDoc?'yes':'no'}">${p.acceptsLowDoc?'Yes':'No'}</span></div>
+      <div class="policy-row"><span class="policy-key">Accepts BAS</span><span class="policy-val ${p.acceptsBas?'yes':'no'}">${p.acceptsBas?'Yes':'No'}</span></div>
+      <div class="policy-row"><span class="policy-key">Accountant letter</span><span class="policy-val ${p.acceptsAccountant?'yes':'no'}">${p.acceptsAccountant?'Yes':'No'}</span></div>
+      <div class="policy-row"><span class="policy-key">Assessment method</span><span class="policy-val">${p.method.replace(/_/g,' ')}</span></div>
+      <div class="policy-row"><span class="policy-key">Variable rate from</span><span class="policy-val">${l.rates.variable}% p.a.</span></div>
+      <div style="margin-top:10px;font-size:12px;color:var(--ink-muted);line-height:1.6;">${l.notes}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('policy-detail').style.display = 'block';
+}
+
+// Policy AI (powered by Claude API)
+async function askPolicyAI() {
+  const q = document.getElementById('policy-question').value.trim();
+  if (!q) return;
+
+  const answerDiv = document.getElementById('ai-answer');
+  answerDiv.style.display = 'block';
+  answerDiv.innerHTML = `<div class="card-sm" style="color:var(--ink-muted);font-size:13px;">⏳ Consulting lender policy database...</div>`;
+
+  const policyContext = Object.entries(LENDERS).map(([id, l]) =>
+    `${l.name}: minAbnAge=${l.policy.minAbnAge}mo, maxLvr=${l.policy.maxLvr}%, lowDoc=${l.policy.acceptsLowDoc}, acceptsBas=${l.policy.acceptsBas}, method=${l.policy.method}. ${l.notes}`
+  ).join('\n');
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        system: `You are ABNable's lender policy AI — an expert on Australian self-employed mortgage lending. 
+You have access to the following lender policy database:
+
+${policyContext}
+
+Give clear, direct answers. Be specific about which lenders will/won't approve. Format your answer in plain text with clear yes/no recommendations per lender. Keep it under 200 words.`,
+        messages: [{ role: "user", content: q }]
+      })
+    });
+
+    const data = await res.json();
+    const text = data.content?.[0]?.text || "Unable to get a response.";
+    answerDiv.innerHTML = `<div class="card-sm">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--green);margin-bottom:8px;">Lender Policy AI</div>
+      <div style="font-size:14px;color:var(--ink);line-height:1.7;white-space:pre-wrap;">${text}</div>
+    </div>`;
+  } catch(e) {
+    answerDiv.innerHTML = `<div class="card-sm" style="color:var(--red);font-size:13px;">API error — ensure you're running in production with a valid Anthropic API key.</div>`;
+  }
+}
+
+// Init
+renderBrokerTable();
+renderPolicyGrid();
+</script>
+</body>
+</html>
