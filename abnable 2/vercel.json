@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/", "dest": "/abnable.html" },
+    { "src": "/calculator", "dest": "/abnable-serviceability.html" },
+    { "src": "/bas", "dest": "/abnable-bas-calculator.html" },
+    { "src": "/report", "dest": "/abnable-report.html" },
+    { "src": "/widget", "dest": "/abnable-widget.html" },
+    { "src": "/platform", "dest": "/abnable-platform.html" },
+    { "src": "/brokers", "dest": "/abnable-broker-signup.html" }
+  ]
+}
